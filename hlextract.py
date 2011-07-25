@@ -34,8 +34,11 @@ def proper_name(s, form='proper'):
 
 def HLExtract(pkg, dpath, e, **kwargs):
     # Process arguments heer.
-    if pkg[-4:] == '.vpk' and kwargs['game'] in defn['vpk']:
+    pkg_t = pkg.split(os.extsplit)
+    if pkg_t[1] == 'vpk' and kwargs['game'] in defn['vpk']:
         xpkg = os.path.join(config['dir']['common'], proper_name(kwargs['game']), kwargs['game'], 'pak01_dir.vpk')
+    elif pkg_t[1] == 'vpk' and pkg_t[0] != 'pak01_dir.vpk':
+        raise Exception('Error: HLExtract does not support extracting from non-directory .VPKs:', pkg_t[0])
     else:
         xpkg = os.path.join(config['dir']['steamapps'], pkg)
     if 'multidir' in kwargs and kwargs['multidir'] is True:
