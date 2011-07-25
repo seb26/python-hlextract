@@ -1,14 +1,10 @@
 ﻿# Copyright (c) 2011 seb26. All rights reserved.
 # Source code is licensed under the terms of the Modified BSD License.
 
-import os
-import sys
-import shutil
-import re
+import os, sys, shutil, re
 from collections import defaultdict
 
-import config
-import defn
+import config, defn
 
 config = config.config
 defn = defn.defn
