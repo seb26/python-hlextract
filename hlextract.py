@@ -1,4 +1,4 @@
-﻿# Copyright (c) 2011 seb26. All rights reserved.
+# Copyright (c) 2011 seb26. All rights reserved.
 # Source code is licensed under the terms of the Modified BSD License.
 
 import os
@@ -32,6 +32,7 @@ class HLExtract:
             }
 
         self.hlcmd = {}
+        self.debug = {}
 
     def getName(self, string, form='proper'):
         if form == 'proper':
@@ -53,9 +54,8 @@ class HLExtract:
             elif kwargs['vpk'] is True:
                 tpkg = os.path.splitext(package)
                 if package == 'pak01_dir.vpk':
-                    gamename = self.getName(kwargs['game'])
                     self.hlcmd['p'] = os.path.join(
-                        self.config['dir']['common'], gamename, kwargs['game'], 'pak01_dir.vpk')
+                        self.config['dir']['common'], self.getName(kwargs['game']), kwargs['game'], 'pak01_dir.vpk')
                 elif tpkg[1] == '.gcf':
                     raise Exception('defined package is .gcf while vpk set to true')
                 elif tpkg[1] == '.vpk' and tpkg[0] != 'pak01_dir':
@@ -64,12 +64,41 @@ class HLExtract:
             self.hlcmd['p'] = os.path.join(self.config['dir']['steamapps'], package)
 
         if 'multidir' in kwargs and kwargs['multidir'] is True:
-            extr = {}
-            mdir = defaultdict(list)
+            edir = {}
+            temp = defaultdict(list)
+            for fn in extr:
+                wdir = os.path.split(fn)[0]
+                temp[wdir].append(fn) # Add each fn to the appropriate working dir list.
+            for t in temp.items():
+                fdir = t[0]
+                f = t[1]
+                edir[fdir] = '-e "' + '" -e "'.join(f) + '"'
+            self.debug['runcount'] = len(edir.items())
+            self.hlcmd['dir'] = edir.items()
+            for t in self.hlcmd['dir']:
+                xpath = os.path.join(outdir, package, t[0])
+                if not os.path.exists(xpath):
+                    pass # os.makedirs(xpath)
+                self.cmd(self.hlcmd['p'], xpath, t[1], options='abcdefsmqxx')
         else:
             return 'error'
 
+    def cmd(self, p, d, e, *args, **kwargs):
+        self.hlcmd['cmd'] = []
+        self.hlcmd['cmd'].extend([ '-p "%s"' % p, '-d "%s"' % d, e ])
+
+        if 'validate' in kwargs:
+            self.hlcmd['cmd'].append(kwargs['validate'])
+        if 'list' in kwargs:
+            self.hlcmd['cmd'].append('-' + kwargs['list'])
+        if 'options' in kwargs:
+            allowed = 'fsmqvor' # Valid HLExtract options (see README)
+            self.hlcmd['cmd'].append('-' + ' -'.join([i for i in kwargs['options'] if i in allowed]))
+        cmd = r'bin\HLExtract.exe' + ' ' + ' '.join(self.hlcmd['cmd'])
+        """process = os.popen(cmd)
+        for z in process.readlines():
+            print z.strip()
+        process.close()"""
+
 
 HL = HLExtract(r'C:\Program Files\Steam', 'unleashed26')
-
-print HL.extract('team fortress 2 content.gcf', r'X:\test01', r'root\tf\steam.inf', multidir=True)
