@@ -63,7 +63,7 @@ class HLExtract:
         else:
             self.hlcmd['p'] = os.path.join(self.config['dir']['steamapps'], package)
 
-        if 'multidir' in kwargs and kwargs['multidir'] is True:
+        if type(extr) is list:
             edir = {}
             temp = defaultdict(list)
             for fn in extr:
@@ -79,26 +79,28 @@ class HLExtract:
                 xpath = os.path.join(outdir, package, t[0])
                 if not os.path.exists(xpath):
                     pass # os.makedirs(xpath)
-                self.cmd(self.hlcmd['p'], xpath, t[1], options='abcdefsmqxx')
+                self._cmd(self.hlcmd['p'], xpath, t[1], options=kwargs['options'], silent=False)
         else:
-            return 'error'
+            pass # Do singlepath stuff heer.
 
-    def cmd(self, p, d, e, *args, **kwargs):
+    def _cmd(self, p, d, e, *args, **kwargs):
         self.hlcmd['cmd'] = []
         self.hlcmd['cmd'].extend([ '-p "%s"' % p, '-d "%s"' % d, e ])
 
         if 'validate' in kwargs:
             self.hlcmd['cmd'].append(kwargs['validate'])
-        if 'list' in kwargs:
+        if 'list' in kwargs and kwargs['list'] is not False:
             self.hlcmd['cmd'].append('-' + kwargs['list'])
         if 'options' in kwargs:
-            allowed = 'fsmqvor' # Valid HLExtract options (see README)
+            allowed = 'smqvor' # Valid HLExtract options (see README) - Excluding 'f' as it is dangerous during testing.
+            silent = False
+            if 's' in kwargs['options']:
+                silent = True
             self.hlcmd['cmd'].append('-' + ' -'.join([i for i in kwargs['options'] if i in allowed]))
         cmd = r'bin\HLExtract.exe' + ' ' + ' '.join(self.hlcmd['cmd'])
-        """process = os.popen(cmd)
-        for z in process.readlines():
-            print z.strip()
-        process.close()"""
-
-
-HL = HLExtract(r'C:\Program Files\Steam', 'unleashed26')
+        print cmd # Debuggin'. Don't be mad.
+        process = os.popen(cmd)
+        if 'silent' not in kwargs or silent is False:
+            for z in process.readlines():
+                print z.strip()
+        process.close()
