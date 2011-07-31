@@ -3,3 +3,4 @@
 - Validate function
 - Defrag function
 - Move some cmdline options to the outer class and make self.params store things like volatile
+- Improve stoopid vpk / game option. Perhaps easier to simply specify the path to the vpk instead of requiring 'game' to be defined all the time.
