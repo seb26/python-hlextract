@@ -63,32 +63,44 @@ class HLExtract:
         else:
             self.hlcmd['p'] = os.path.join(self.config['dir']['steamapps'], package)
 
-        if type(extr) is list:
-            edir = {}
-            temp = defaultdict(list)
-            for fn in extr:
-                wdir = os.path.split(fn)[0]
-                temp[wdir].append(fn) # Add each fn to the appropriate working dir list.
-            for t in temp.items():
-                fdir = t[0]
-                f = t[1]
-                edir[fdir] = '-e "' + '" -e "'.join(f) + '"'
-            self.debug['runcount'] = len(edir.items())
-            self.hlcmd['dir'] = edir.items()
-            for t in self.hlcmd['dir']:
-                xpath = os.path.join(outdir, package, t[0])
-                if not os.path.exists(xpath):
-                    pass # os.makedirs(xpath)
-                self._cmd(self.hlcmd['p'], xpath, t[1], options=kwargs['options'], silent=False)
+        if 'multidir' in kwargs and kwargs['multidir'] is True:
+            if type(extr) is list:
+                edir = {}
+                temp = defaultdict(list)
+                for fn in extr:
+                    wdir = os.path.split(fn)[0]
+                    temp[wdir].append(fn) # Add each fn to the appropriate working dir list.
+                for t in temp.items():
+                    fdir = t[0]
+                    f = t[1]
+                    edir[fdir] = '-e "' + '" -e "'.join(f) + '"'
+                self.debug['runcount'] = len(edir.items())
+                self.hlcmd['dir'] = edir.items()
+                for t in self.hlcmd['dir']:
+                    xpath = os.path.join(outdir, package, t[0])
+                    if not os.path.exists(xpath):
+                        os.makedirs(xpath)
+                    self._cmd(self.hlcmd['p'], xpath, t[1], options=kwargs['options'], silent=False)
+            else:
+                raise Exception('multidir is set but given object is not a list of multiple items')
         else:
-            pass # Do singlepath stuff heer.
+            if type(extr) is list:
+                if len(extr) > 1:
+                    extr_cmd = '-e "' + '" -e "'.join(extr) + '"'
+                elif len(extr) == 1:
+                    extr_cmd = r'-e "%s"' % extr
+            elif type(extr) is str:
+                extr_cmd = r'-e "%s"' % extr
+            xpath = os.path.join(outdir, package)
+            if not os.path.exists(xpath):
+                pass # os.makedirs(xpath)
+            self._cmd(self.hlcmd['p'], xpath, extr_cmd, options=kwargs['options'], silent=False)
 
-    def _cmd(self, p, d, e, *args, **kwargs):
+
+    def _cmd(self, p, d, ev, *args, **kwargs):
         self.hlcmd['cmd'] = []
-        self.hlcmd['cmd'].extend([ '-p "%s"' % p, '-d "%s"' % d, e ])
+        self.hlcmd['cmd'].extend([ '-p "%s"' % p, '-d "%s"' % d, ev ])
 
-        if 'validate' in kwargs:
-            self.hlcmd['cmd'].append(kwargs['validate'])
         if 'list' in kwargs and kwargs['list'] is not False:
             self.hlcmd['cmd'].append('-' + kwargs['list'])
         if 'options' in kwargs:
@@ -100,7 +112,7 @@ class HLExtract:
         cmd = r'bin\HLExtract.exe' + ' ' + ' '.join(self.hlcmd['cmd'])
         print cmd # Debuggin'. Don't be mad.
         process = os.popen(cmd)
-        if 'silent' not in kwargs or silent is False:
+        if silent is False:
             for z in process.readlines():
                 print z.strip()
         process.close()
