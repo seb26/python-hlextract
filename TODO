@@ -1,0 +1,6 @@
+- Console command function based on HLExtract -c 
+-- Add infodir() function that takes the output of "info root\dir" and puts it inside a dict
+-- Add similar functions for most commands
+- Validate function
+- Defrag function
+- Move some cmdline options to the outer class and make self.params store things like volatile
