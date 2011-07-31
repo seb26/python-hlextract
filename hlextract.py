@@ -8,7 +8,7 @@ from collections import defaultdict
 
 class HLExtract:
 
-    def __init__(self, steamdir, username):
+    def __init__(self, steamdir, username, volatile=False):
         self.config = {}
         self.config['dir'] = {}
         self.config['dir']['steamapps'] = os.path.join(steamdir, 'steamapps')
@@ -36,6 +36,12 @@ class HLExtract:
         self.hlcmd = {}
         self.debug = {}
 
+        if volatile is True:
+            self.hlcmd['v'] = True
+        else:
+            self.hlcmd['v'] = False
+
+
     def getName(self, string, form='proper'):
         if form == 'proper':
             xform = 1 # Proper name form (see defn.py)
@@ -48,6 +54,7 @@ class HLExtract:
             return None
         else:
             return result[0]
+
 
     def getPackagePath(self, package, **kwargs):
         tpkg = os.path.splitext(package)
@@ -65,11 +72,51 @@ class HLExtract:
             path = os.path.join(self.config['dir']['steamapps'], package)
             return path
 
-    def extract(self, package, outdir, extr, **kwargs):
-        p = self.getPackagePath(package, game=kwargs['game'])
+
+    def info(self, package, infol, **kwargs):
         if 'game' in kwargs:
+            p = self.getPackagePath(package, game=kwargs['game'])
+        else:
+            p = self.getPackagePath(package)
+        if type(infol) is list:
+            info = [ 'info ' + i for i in infol ]
+            return self.cmd_console(p, info)
+        else:
+            return self.cmd_console(p, list('info ' + infol))
+
+
+    def find(self, package, items, **kwargs):
+        """ Find an item (file or dir) inside the package.
+        package - package name (if vpk, set to 'pak01_dir.vpk' and also set 'game' appropriately)
+        items - list or str (if only 1 item to search) of item names to search for.
+        kwargs:
+            game - set if vpk
+        """
+        if 'game' in kwargs:
+            p = self.getPackagePath(package, game=kwargs['game'])
+        else:
+            p = self.getPackagePath(package)
+        if type(items) is list:
+            send = [ 'find ' + i for i in items ]
+        else:
+            send = list('find ' + items)
+        res = self.cmd_console(p, send)
+        resd = defaultdict(list)
+        if len(res) != 0:
+            for t in res.items():
+                item = t[0][5:]
+                resd[item].append(t[1].values()[0])
+            return resd
+        else:
+            return False
+
+
+    def extract(self, package, outdir, extr, **kwargs):
+        if 'game' in kwargs:
+            p = self.getPackagePath(package, game=kwargs['game'])
             pdirname = os.path.join(package, kwargs['game'])
         else:
+            p = self.getPackagePath(package)
             pdirname = package
         if 'multidir' in kwargs and kwargs['multidir'] is True:
             if type(extr) is list:
