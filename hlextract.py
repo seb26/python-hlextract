@@ -47,22 +47,36 @@ class HLExtract:
         else:
             return result[0]
 
-    def extract(self, package, outdir, extr, **kwargs):
-        if 'vpk' and 'game' in kwargs:
-            if kwargs['vpk'] is True and kwargs['game'] not in self.defn['vpk']:
-                raise Exception('game does not use .vpk: %s' % kwargs['game'])
-            elif kwargs['vpk'] is True:
-                tpkg = os.path.splitext(package)
-                if package == 'pak01_dir.vpk':
-                    self.hlcmd['p'] = os.path.join(
+    def getPackagePath(self, package, **kwargs):
+        tpkg = os.path.splitext(package)
+        if 'game' in kwargs and tpkg[1] == '.vpk':
+            if kwargs['game'] in self.defn['vpk']:
+                if tpkg[0] == 'pak01_dir':
+                    path = os.path.join(
                         self.config['dir']['common'], self.getName(kwargs['game']), kwargs['game'], 'pak01_dir.vpk')
-                elif tpkg[1] == '.gcf':
-                    raise Exception('defined package is .gcf while vpk set to true')
-                elif tpkg[1] == '.vpk' and tpkg[0] != 'pak01_dir':
-                    raise Exception('can only extract from pak01_dir.vpk, %s not supported' % package)
+                    return path
+                if tpkg[0] != 'pak01_dir' and tpkg[1] == '.vpk':
+                    raise Exception, 'can only extract from pak01_dir.vpk, defined vpk not supported: ' + package
+            else:
+                raise Exception, 'defined game does not use .vpk: ' + kwargs['game']
         else:
-            self.hlcmd['p'] = os.path.join(self.config['dir']['steamapps'], package)
+            path = os.path.join(self.config['dir']['steamapps'], package)
+            return path
 
+    def console(self, package, **kwargs):
+        cmd = r'bin\HLExtract' + '-p "%s"' % package + ' -c'
+        if 'initcmd' in kwargs:
+            cmd = cmd + '
+
+        process = os.popen(cmd)
+        for z in process.readlines():
+            print z.strip()
+        t = Timer(10.0, process.close())
+        t.start()
+
+
+    def extract(self, package, outdir, extr, **kwargs):
+        self.hlcmd['p'] = self.getPackagePath(package, game=kwargs['game'])
         if 'multidir' in kwargs and kwargs['multidir'] is True:
             if type(extr) is list:
                 edir = {}
