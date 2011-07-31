@@ -2,6 +2,7 @@
 # Source code is licensed under the terms of the Modified BSD License.
 
 import os
+from subprocess import Popen, PIPE, STDOUT
 from collections import defaultdict
 
 class HLExtract:
@@ -63,20 +64,12 @@ class HLExtract:
             path = os.path.join(self.config['dir']['steamapps'], package)
             return path
 
-    def console(self, package, **kwargs):
-        cmd = r'bin\HLExtract' + '-p "%s"' % package + ' -c'
-        if 'initcmd' in kwargs:
-            cmd = cmd + '
-
-        process = os.popen(cmd)
-        for z in process.readlines():
-            print z.strip()
-        t = Timer(10.0, process.close())
-        t.start()
-
-
     def extract(self, package, outdir, extr, **kwargs):
-        self.hlcmd['p'] = self.getPackagePath(package, game=kwargs['game'])
+        p = self.getPackagePath(package, game=kwargs['game'])
+        if 'game' in kwargs:
+            pdirname = os.path.join(package, kwargs['game'])
+        else:
+            pdirname = package
         if 'multidir' in kwargs and kwargs['multidir'] is True:
             if type(extr) is list:
                 edir = {}
@@ -91,10 +84,10 @@ class HLExtract:
                 self.debug['runcount'] = len(edir.items())
                 self.hlcmd['dir'] = edir.items()
                 for t in self.hlcmd['dir']:
-                    xpath = os.path.join(outdir, package, t[0])
+                    xpath = os.path.join(outdir, pdirname, t[0])
                     if not os.path.exists(xpath):
                         os.makedirs(xpath)
-                    self._cmd(self.hlcmd['p'], xpath, t[1], options=kwargs['options'], silent=False)
+                    self.cmd_close(p, xpath, t[1], options=kwargs['options'], silent=False)
             else:
                 raise Exception('multidir is set but given object is not a list of multiple items')
         else:
@@ -105,28 +98,70 @@ class HLExtract:
                     extr_cmd = r'-e "%s"' % extr
             elif type(extr) is str:
                 extr_cmd = r'-e "%s"' % extr
-            xpath = os.path.join(outdir, package)
+            xpath = os.path.join(outdir, pdirname)
             if not os.path.exists(xpath):
                 pass # os.makedirs(xpath)
-            self._cmd(self.hlcmd['p'], xpath, extr_cmd, options=kwargs['options'], silent=False)
+            self.cmd_close(p, xpath, extr_cmd, options=kwargs['options'], silent=False)
 
 
-    def _cmd(self, p, d, ev, *args, **kwargs):
-        self.hlcmd['cmd'] = []
-        self.hlcmd['cmd'].extend([ '-p "%s"' % p, '-d "%s"' % d, ev ])
+    def cmd_console(self, package, **kwargs):
+        """ EXPERIMENTAL """
+        cmd_output = []
+        cmd_output.append('-p "%s"' % p)
+        for z in cmdl:
+            cmd_output.append(z)
+        cmd = r'bin\HLExtract.exe' + ' ' + ' '.join(cmd_output)
+
+        """ Begin code that I don't fully understand yet. """
+        p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+        output = []
+        for z in p.stdout.readlines():
+            output.append(z.strip('\r\n'))
+        return output
+
+
+    def cmd_close(self, p, d, ev, **kwargs):
+        """ Run a HLExtract process and then terminate.
+        p - package name (if vpk, set to 'pak01_dir.vpk' and set 'game' appropriately)
+        d - directory to extract to
+        ev - items to extract / validate (in the form: -e "path\to\file.txt" (or -t))
+        kwargs: options
+            options - string, containing options to pass to HLExtract (accepts s, m, q, v, o, r (see readme))
+        """
+        cmd_close = []
+        cmd_close.extend([ '-p "%s"' % p, '-d "%s"' % d, ev ])
 
         if 'list' in kwargs and kwargs['list'] is not False:
-            self.hlcmd['cmd'].append('-' + kwargs['list'])
+            cmd_close.append('-' + kwargs['list'])
+        silent = False
         if 'options' in kwargs:
-            allowed = 'smqvor' # Valid HLExtract options (see README) - Excluding 'f' as it is dangerous during testing.
-            silent = False
+            allowed = 'smqvor' # Valid HLExtract options (see README)
             if 's' in kwargs['options']:
                 silent = True
-            self.hlcmd['cmd'].append('-' + ' -'.join([i for i in kwargs['options'] if i in allowed]))
-        cmd = r'bin\HLExtract.exe' + ' ' + ' '.join(self.hlcmd['cmd'])
+            cmd_close.append('-' + ' -'.join([i for i in kwargs['options'] if i in allowed]))
+        cmd = r'bin\HLExtract.exe' + ' ' + ' '.join(cmd_close)
         print cmd # Debuggin'. Don't be mad.
         process = os.popen(cmd)
         if silent is False:
             for z in process.readlines():
                 print z.strip()
         process.close()
+
+
+    def cmd_output(self, p, cmdl):
+        """ Run HLExtract and return the output.
+        p - package (needs full path, use getPackagePath())
+        cmdl - list, containing commands e.g.: [ '-c', '-s', '-x "cmd"' ]
+        """
+        cmd_output = []
+        cmd_output.append('-p "%s"' % p)
+        for z in cmdl:
+            cmd_output.append(z)
+        cmd = r'bin\HLExtract.exe' + ' ' + ' '.join(cmd_output)
+
+        """ Begin code that I don't fully understand yet. """
+        p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+        output = []
+        for z in p.stdout.readlines():
+            output.append(z.strip('\r\n'))
+        return output
