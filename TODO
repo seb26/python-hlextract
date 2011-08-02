@@ -1,4 +1,4 @@
 - Validate function
 - Defrag function
-- Work in volatile option into each function.
 - Improve stoopid vpk / game option. Perhaps easier to simply specify the path to the vpk instead of requiring 'game' to be defined all the time.
+- Add debug mode to cmd_*() functions, to show exactly what is being fed to the executable.

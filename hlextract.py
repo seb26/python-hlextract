@@ -34,7 +34,6 @@ class HLExtract:
             }
 
         self.hlcmd = {}
-        self.debug = {}
 
         if volatile is True:
             self.hlcmd['v'] = True
@@ -129,7 +128,6 @@ class HLExtract:
                     fdir = t[0]
                     f = t[1]
                     edir[fdir] = '-e "' + '" -e "'.join(f) + '"'
-                self.debug['runcount'] = len(edir.items())
                 self.hlcmd['dir'] = edir.items()
                 for t in self.hlcmd['dir']:
                     xpath = os.path.join(outdir, pdirname, t[0])
@@ -152,6 +150,24 @@ class HLExtract:
             self.cmd_close(p, xpath, extr_cmd, options=kwargs['options'], silent=False)
 
 
+    def validate(self, package, validr, **kwargs):
+        if 'game' in kwargs:
+            p = self.getPackagePath(package, game=kwargs['game'])
+            pdirname = os.path.join(package, kwargs['game'])
+        else:
+            p = self.getPackagePath(package)
+            pdirname = package
+        if type(validr) is list:
+            validr_cmd = '-s -t "' + '" -t "'.join(validr) + '"'
+        else:
+            validr_cmd = '-s -t "%s"' % validr
+        output = self.cmd_output(p, validr_cmd)
+        if output is None:
+            return True # Everything validated successfully
+        else:
+            return False # There were some issues. Expand on this later (need to get hands on broken GCF for testing).
+
+
     def _cmd_options(self, options):
             allowed = 'smqvor'
             return '-' + ' -'.join([i for i in options if i in allowed])
@@ -170,6 +186,8 @@ class HLExtract:
         """
         cmd_output = []
         cmd_output.append('-p "%s"' % p)
+        if self.hlcmd['v'] is True:
+            cmd_output.append('-v')
         cmd_output.append('-c')
         cmd_output.append('-s') # Need silent on to enable cleaner parsing.
         cmdl_x = '-x "' + '" -x "'.join(cmdl) + '"'
@@ -208,7 +226,8 @@ class HLExtract:
         """
         cmd_close = []
         cmd_close.extend([ '-p "%s"' % p, '-d "%s"' % d, ev ])
-
+        if self.hlcmd['v'] is True:
+            cmd_close.append('-v')
         if 'list' in kwargs and kwargs['list'] is not False:
             cmd_close.append('-' + kwargs['list'])
         silent = False
@@ -236,7 +255,12 @@ class HLExtract:
         cmd_output.append('-p "%s"' % p)
         if 'options' in kwargs:
             cmd_output.append(self._cmd_options(kwargs['options']))
-        cmd_output.extend(cmdl)
+        if self.hlcmd['v'] is True:
+            cmd_output.append('-v')
+        if type(cmdl) is list:
+            cmd_output.extend(cmdl) # Simply extend with the list of commands gien.
+        else:
+            cmd_output.append(cmdl)
         cmd = r'bin\HLExtract.exe' + ' ' + ' '.join(cmd_output)
 
         """ Begin code that I don't fully understand yet. """
