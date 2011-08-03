@@ -1,4 +1,7 @@
-- Validate function
-- Defrag function
-- Improve stoopid vpk / game option. Perhaps easier to simply specify the path to the vpk instead of requiring 'game' to be defined all the time.
-- Add debug mode to cmd_*() functions, to show exactly what is being fed to the executable.
+* Defrag function
+** Need to return True / False depending on if it is successful (also if cmd fails due to non-volatile, need to return False somehow).
+* Improve stoopid vpk / game option. Perhaps easier to simply specify the path to the vpk instead of requiring 'game' to be defined all the time.
+* Add debug mode to cmd_*() functions, to show exactly what is being fed to the executable.
+* cmd_console() currently is never told to end its process. HLExtract.exe will run forever unless its process is killed via the task manager.
+* Possibly modify cmd_*() to simply return the process object so commands can be passed to it. (e.g. x = self.cmd_console(); x.close())
+* Need to modify cmd_close() to not demand a list of items to extract, or a directory to extract to.

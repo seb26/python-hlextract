@@ -168,9 +168,33 @@ class HLExtract:
             return False # There were some issues. Expand on this later (need to get hands on broken GCF for testing).
 
 
+    def defrag(self, package, **kwargs):
+        """ Defrags package (-f flag).
+        Ignores volatile state.
+        """
+        if 'game' in kwargs:
+            p = self.getPackagePath(package, game=kwargs['game'])
+            pdirname = os.path.join(package, kwargs['game'])
+        else:
+            p = self.getPackagePath(package)
+            pdirname = package
+        defrag_cmdl = []
+        defrag_cmdl.append('-f') # Defrag package.
+        defrag_cmdl.append('-s') # Silent.
+        if 'options' in kwargs:
+            defrag_cmdl.append(self._cmd_options(options))
+        defrag_cmd = ' '.join(defrag_cmdl)
+        return None # self.cmd_close(p,
+
+
     def _cmd_options(self, options):
-            allowed = 'smqvor'
-            return '-' + ' -'.join([i for i in options if i in allowed])
+        """ Returns a formatted string when given options.
+        Example:
+            'xftv' returns '-x -f -t -v'
+            ['x', 'f', 't', 'v'] returns '-x -f -t -v'
+        """
+        allowed = 'smqvor'
+        return '-' + ' -'.join([i for i in options if i in allowed])
 
 
     def cmd_console(self, p, cmdl, **kwargs):
