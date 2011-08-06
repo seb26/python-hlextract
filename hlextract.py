@@ -112,8 +112,7 @@ class HLExtract:
 
 
     def defrag(self, package, **kwargs):
-        """ Defrags package (-f flag).
-        Ignores volatile state.
+        """ Defrags package (-f flag). Ignores volatile state.
         """
         p = self.getPackagePath(package)
         defrag_cmdl = []
@@ -157,9 +156,9 @@ class HLExtract:
         cmd_output.append('-x "exit"') # Closing the process so it doesn't run forever.
         cmd = r'bin\HLExtract.exe' + ' ' + ' '.join(cmd_output)
 
-        p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+        process = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
         output = []
-        for z in p.stdout.readlines():
+        for z in process.stdout.readlines():
             output.append(z.strip('\r\n'))
         d = defaultdict(list)
         info = {}
