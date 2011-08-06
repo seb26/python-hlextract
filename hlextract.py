@@ -28,11 +28,6 @@ class HLExtract:
         return os.path.join(self.config['dir']['steamapps'], package)
 
 
-    def getGameName(self, package):
-        path = package.split('\\')
-        return path
-
-
     def info(self, package, infol, **kwargs):
         p = self.getPackagePath(package)
         if type(infol) is list:
@@ -68,9 +63,9 @@ class HLExtract:
     def extract(self, package, outdir, extr, **kwargs):
         p = self.getPackagePath(package)
         if os.path.splitext(p)[1] == '.gcf':
-            pdirname = self.getGameName(package)[-1] # the filename of the gcf
+            pdirname = package.split('\\')[-1] # the filename of the gcf
         else:
-            pdirname = self.getGameName(package)[-2] # the directory containing the vpk (most commonly the game's abbreviated name)
+            pdirname = package.split('\\')[-2] # the directory containing the vpk (most commonly the game's abbreviated name)
         if 'multidir' in kwargs and kwargs['multidir'] is True:
             if type(extr) is list:
                 edir = {}
@@ -82,12 +77,11 @@ class HLExtract:
                     fdir = t[0]
                     f = t[1]
                     edir[fdir] = '-e "' + '" -e "'.join(f) + '"'
-                self.hlcmd['dir'] = edir.items()
-                for t in self.hlcmd['dir']:
+                for t in edir.items():
                     xpath = os.path.join(outdir, pdirname, t[0])
                     if not os.path.exists(xpath):
                         os.makedirs(xpath)
-                    self.cmd_close(p, xpath, t[1], options=kwargs['options'], silent=False)
+                    self.cmd_close(p, dir=xpath, extr=t[1], options=kwargs['options'])
             else:
                 raise Exception('multidir is set but given object is not a list of multiple items')
         else:
@@ -101,7 +95,7 @@ class HLExtract:
             xpath = os.path.join(outdir, pdirname)
             if not os.path.exists(xpath):
                 os.makedirs(xpath)
-            self.cmd_close(p, xpath, extr_cmd, options=kwargs['options'], silent=False)
+            self.cmd_close(p, dir=xpath, extr=extr_cmd, options=kwargs['options'])
 
 
     def validate(self, package, validr, **kwargs):
@@ -184,31 +178,29 @@ class HLExtract:
         return info
 
 
-    def cmd_close(self, p, d, ev, **kwargs):
+    def cmd_close(self, p, **kwargs):
         """ Run a HLExtract process and then terminate.
         p - package name (if vpk, set to 'pak01_dir.vpk' and also set 'game' appropriately)
-        d - directory to extract to
-        ev - items to extract / validate (in the form: -e "path\to\file.txt" (or -t))
-        kwargs: options
+        kwargs: dir, extr, validr, options
+            wdir - directory to extract to
+            extr - str, items to extract
+            validr - str, items to extract
             options - string, additional HLExtract cmdline options.
         """
         cmd_close = []
-        cmd_close.extend([ '-p "%s"' % p, '-d "%s"' % d, ev ])
+        cmd_close.append('-p "%s"' % p)
         if self.hlcmd['v'] is True:
             cmd_close.append('-v')
-        if 'list' in kwargs and kwargs['list'] is not False:
-            cmd_close.append('-' + kwargs['list'])
-        silent = False
+        if 'dir' in kwargs:
+            cmd_close.append('-d "%s"' % kwargs['dir'])
+        if 'extr' in kwargs:
+            cmd_close.append(kwargs['extr'])
+        if 'validr' in kwargs:
+            cmd_close.append(kwargs['validr'])
         if 'options' in kwargs:
             options = self._cmd_options(kwargs['options'])
-            if 's' in options:
-                silent = True
         cmd = r'bin\HLExtract.exe' + ' ' + ' '.join(cmd_close)
-        print cmd # Debuggin'. Don't be mad.
         process = os.popen(cmd)
-        if silent is False:
-            for z in process.readlines():
-                print z.strip()
         process.close()
 
 
