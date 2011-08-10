@@ -9,13 +9,10 @@ from collections import defaultdict
 class HLExtract:
 
     def __init__(self, volatile=False):
-        self.config = {}
-        self.hlcmd = {}
-
         if volatile is True:
-            self.hlcmd['v'] = True
+            self.volatile = True
         else:
-            self.hlcmd['v'] = False
+            self.volatile = False
 
 
     def info(self, package, infol, **kwargs):
@@ -132,7 +129,7 @@ class HLExtract:
         """
         cmd_output = []
         cmd_output.append('-p "%s"' % p)
-        if self.hlcmd['v'] is True:
+        if self.volatile is True:
             cmd_output.append('-v')
         cmd_output.append('-c')
         cmd_output.append('-s') # Need silent on to enable cleaner parsing.
@@ -173,7 +170,7 @@ class HLExtract:
         """
         cmd_close = []
         cmd_close.append('-p "%s"' % p)
-        if self.hlcmd['v'] is True:
+        if self.volatile is True:
             cmd_close.append('-v')
         if 'dir' in kwargs:
             cmd_close.append('-d "%s"' % kwargs['dir'])
@@ -199,7 +196,7 @@ class HLExtract:
         cmd_output.append('-p "%s"' % p)
         if 'options' in kwargs:
             cmd_output.append(self._cmd_options(kwargs['options']))
-        if self.hlcmd['v'] is True:
+        if self.volatile is True:
             cmd_output.append('-v')
         if type(cmdl) is list:
             cmd_output.extend(cmdl) # Simply extend with the list of commands gien.
@@ -208,8 +205,9 @@ class HLExtract:
         cmd = r'bin\HLExtract.exe' + ' ' + ' '.join(cmd_output)
 
         """ Begin code that I don't fully understand yet. """
-        p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+        process = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
         output = []
-        for z in p.stdout.readlines():
+        for z in process.stdout.readlines():
             output.append(z.strip('\r\n'))
+        process.close()
         return output
