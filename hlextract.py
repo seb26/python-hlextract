@@ -8,13 +8,8 @@ from collections import defaultdict
 
 class HLExtract:
 
-    def __init__(self, steamdir, username, volatile=False):
+    def __init__(self, volatile=False):
         self.config = {}
-        self.config['dir'] = {}
-        self.config['dir']['steamapps'] = os.path.join(steamdir, 'steamapps')
-        self.config['dir']['common'] = os.path.join(steamdir, 'steamapps', 'common')
-        self.config['dir']['usr'] = os.path.join(steamdir, 'steamapps', username)
-
         self.hlcmd = {}
 
         if volatile is True:
@@ -23,18 +18,12 @@ class HLExtract:
             self.hlcmd['v'] = False
 
 
-    def getPackagePath(self, package):
-        """ Returns package path relative to Steam\steamapps & Steam installation variables. """
-        return os.path.join(self.config['dir']['steamapps'], package)
-
-
     def info(self, package, infol, **kwargs):
-        p = self.getPackagePath(package)
         if type(infol) is list:
             info = [ 'info ' + i for i in infol ]
-            return self.cmd_console(p, info)
+            return self.cmd_console(package, info)
         else:
-            return self.cmd_console(p, list('info ' + infol))
+            return self.cmd_console(package, list('info ' + infol))
 
 
     def find(self, package, items, **kwargs):
@@ -44,12 +33,11 @@ class HLExtract:
         kwargs:
             game - set if vpk
         """
-        p = self.getPackagePath(package)
         if type(items) is list:
             send = [ 'find ' + i for i in items ]
         else:
             send = list('find ' + items)
-        res = self.cmd_console(p, send)
+        res = self.cmd_console(package, send)
         resd = defaultdict(list)
         if len(res) != 0:
             for t in res.items():
@@ -61,7 +49,6 @@ class HLExtract:
 
 
     def extract(self, package, outdir, extr, **kwargs):
-        p = self.getPackagePath(package)
         if os.path.splitext(p)[1] == '.gcf':
             pdirname = package.split('\\')[-1] # the filename of the gcf
         else:
@@ -81,7 +68,7 @@ class HLExtract:
                     xpath = os.path.join(outdir, pdirname, t[0])
                     if not os.path.exists(xpath):
                         os.makedirs(xpath)
-                    self.cmd_close(p, dir=xpath, extr=t[1], options=kwargs['options'])
+                    self.cmd_close(package, dir=xpath, extr=t[1], options=kwargs['options'])
             else:
                 raise Exception('multidir is set but given object is not a list of multiple items')
         else:
@@ -95,16 +82,15 @@ class HLExtract:
             xpath = os.path.join(outdir, pdirname)
             if not os.path.exists(xpath):
                 os.makedirs(xpath)
-            self.cmd_close(p, dir=xpath, extr=extr_cmd, options=kwargs['options'])
+            self.cmd_close(package, dir=xpath, extr=extr_cmd, options=kwargs['options'])
 
 
     def validate(self, package, validr, **kwargs):
-        p = self.getPackagePath(package)
         if type(validr) is list:
             validr_cmd = '-s -t "' + '" -t "'.join(validr) + '"'
         else:
             validr_cmd = '-s -t "%s"' % validr
-        output = self.cmd_output(p, validr_cmd)
+        output = self.cmd_output(package, validr_cmd)
         if output is None:
             return True # Everything validated successfully
         else:
@@ -114,7 +100,6 @@ class HLExtract:
     def defrag(self, package, **kwargs):
         """ Defrags package (-f flag). Ignores volatile state.
         """
-        p = self.getPackagePath(package)
         defrag_cmdl = []
         defrag_cmdl.append('-f') # Defrag package.
         defrag_cmdl.append('-s') # Silent.
